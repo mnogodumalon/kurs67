@@ -111,25 +111,25 @@ Minimal does NOT mean generic or boring. Every design needs:
 
 ### Design Tokens Example
 
+**⚠️ The template uses oklch() colors and `@theme inline`. You MUST use this format!**
+
 ```css
-/* index.css - Design tokens should match your project's theme! */
+/* EXTEND the existing :root — do NOT rewrite from scratch */
 :root {
-   /* Color palette - choose colors that fit your project */
-   --primary: [hsl values for main brand color];
-   --primary-glow: [lighter version of primary];
+   /* Color palette — use oklch() ONLY, NOT hsl()! */
+   --primary: oklch(0.52 0.22 264);
+   --primary-foreground: oklch(1 0 0);
 
-   /* Gradients */
-   --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-   --gradient-subtle: linear-gradient(180deg, [background-start], [background-end]);
-
-   /* Shadows - use your primary color with transparency */
-   --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.3);
-   --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.4);
-
-   /* Animations */
+   /* Custom tokens — also oklch() */
+   --gradient-primary: linear-gradient(135deg, oklch(0.52 0.22 264), oklch(0.55 0.22 285));
+   --gradient-subtle: linear-gradient(160deg, oklch(1 0 0), oklch(0.974 0.004 264));
+   --shadow-elegant: 0 10px 30px -10px oklch(0.52 0.22 264 / 0.3);
    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 ```
+
+**🚨 WRITE ONCE RULE:** Write/edit each file ONCE. Do NOT write a file, read it back, then rewrite it.
+Plan your design system FULLY (colors, fonts, gradients, shadows) before touching index.css. Plan DashboardOverview FULLY before writing it.
 
 ### Component Variants
 
@@ -230,9 +230,9 @@ generate_typescript → crud_scaffolds: ["team_members", "categories"]
 ```
 
 **After scaffold generation, YOUR JOB is:**
-1. The tool response ALREADY contains all key file contents (types, service, App.tsx, Layout constants, DashboardOverview) — do NOT Read them again!
-2. Define design system in `index.css` (fonts, colors, CSS variables including sidebar tokens)
-3. Build `DashboardOverview.tsx` (hero section, KPI cards with icons/gradients, charts with recharts)
+1. The tool response ALREADY contains all key file contents (types, service, App.tsx, Layout constants, DashboardOverview, AND the existing index.css template format) — do NOT Read them again!
+2. EXTEND `index.css` using Edit tool — add your design tokens to the existing :root (use oklch, keep @theme inline format!)
+3. Write `DashboardOverview.tsx` ONCE — plan fully, then write (hero section, KPI cards with icons/gradients, charts with recharts)
 4. Build custom pages for entities NOT in crud_scaffolds
 5. **Do NOT rewrite CRUD pages or dialogs** — they already have correct logic, localized text, date formatting, and PageShell layout
 6. **Do NOT rewrite Layout.tsx** — it uses semantic sidebar tokens (bg-sidebar, etc.) that adapt to your index.css design

@@ -503,7 +503,6 @@ async def main():
                 layout_path = Path("src/components/Layout.tsx")
                 if layout_path.exists():
                     layout_content = layout_path.read_text()
-                    # Include everything up to the component function body
                     cut_marker = "export function Layout"
                     if cut_marker not in layout_content:
                         cut_marker = "export default function Layout"
@@ -513,6 +512,17 @@ async def main():
                         layout_header = "\n".join(layout_content.split("\n")[:40])
                     response_text += f"\n\n{'='*60}\n📄 src/components/Layout.tsx (constants + imports only)\n{'='*60}\n{layout_header}"
             
+            # Include existing template index.css so agent knows the format (oklch, @theme inline)
+            css_path = Path("src/index.css")
+            if css_path.exists():
+                css_content = css_path.read_text()
+                # Include first ~50 lines to show format (imports, @theme, :root structure)
+                css_header = "\n".join(css_content.split("\n")[:50])
+                response_text += f"\n\n{'='*60}\n📄 src/index.css (EXISTING TEMPLATE — shows required format)\n{'='*60}\n{css_header}\n/* ... more variables ... */"
+                response_text += "\n\n⚠️ CRITICAL CSS FORMAT: The template uses oklch() colors and @theme inline."
+                response_text += "\nYou MUST keep this exact format. EXTEND the existing :root block — do NOT rewrite from scratch."
+                response_text += "\nDo NOT use HSL colors — use oklch() ONLY."
+            
             for fpath in key_files:
                 fp = Path(fpath)
                 if fp.exists():
@@ -521,10 +531,13 @@ async def main():
             if crud_scaffolds:
                 response_text += f"\n\n{'='*60}\n\nCRUD scaffolds generated for: {', '.join(crud_scaffolds)}"
                 response_text += "\nThe CRUD pages, dialogs, ConfirmDialog, StatCard, and PageShell are COMPLETE — do NOT read or rewrite them."
-                response_text += "\n\n⚡ ALL KEY FILES ARE ABOVE — do NOT use Read tool on them. Start coding IMMEDIATELY:"
-                response_text += "\n1. Define your design system in index.css (font, colors, CSS variables incl. sidebar tokens)"
-                response_text += "\n2. Customize APP_TITLE and APP_SUBTITLE constants in Layout.tsx"
-                response_text += "\n3. Build DashboardOverview.tsx (hero section, KPI cards with icons/gradients, charts)"
+                response_text += "\n\n⚡ ALL FILES YOU NEED ARE ABOVE — do NOT use Read tool on them. Start coding IMMEDIATELY."
+                response_text += "\n\n🚨 WRITE ONCE RULE: Write each file ONCE. Do NOT write a file, read it back, then rewrite it."
+                response_text += "\nPlan your design system FULLY before writing index.css. Plan DashboardOverview FULLY before writing it."
+                response_text += "\n\nSTEPS:"
+                response_text += "\n1. Edit index.css with Edit tool — EXTEND the existing :root, add your design tokens (use oklch!)"
+                response_text += "\n2. Edit APP_TITLE and APP_SUBTITLE in Layout.tsx"
+                response_text += "\n3. Write DashboardOverview.tsx ONCE (hero, KPIs, charts — plan it fully first!)"
                 non_scaffolded = [k for k in app_names if k not in crud_scaffolds]
                 if non_scaffolded:
                     response_text += f"\n4. Build custom pages for: {', '.join(non_scaffolded)}"
@@ -532,6 +545,7 @@ async def main():
             else:
                 response_text += f"\n\nGenerated types for: {', '.join(app_names)}"
                 response_text += "\n\n⚡ KEY FILES ARE ABOVE — do NOT re-read them. Start coding immediately."
+                response_text += "\n🚨 WRITE ONCE: Write each file ONCE. Do NOT write, read back, then rewrite."
             
             return {"content": [{"type": "text", "text": response_text}]}
             

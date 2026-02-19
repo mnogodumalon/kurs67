@@ -8,7 +8,6 @@ import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import { KurseDialog } from '@/components/dialogs/KurseDialog';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -128,7 +127,6 @@ export default function KursePage() {
               <TableHead>Preis (€)</TableHead>
               <TableHead>Dozent</TableHead>
               <TableHead>Raum</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead className="w-24">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
@@ -143,7 +141,6 @@ export default function KursePage() {
                 <TableCell>{record.fields.preis ?? '—'}</TableCell>
                 <TableCell>{getDozentenDisplayName(record.fields.dozent)}</TableCell>
                 <TableCell>{getRaeumeDisplayName(record.fields.raum)}</TableCell>
-                <TableCell><Badge variant="secondary">{record.fields.status ?? '—'}</Badge></TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => setEditingRecord(record)}>
@@ -158,7 +155,7 @@ export default function KursePage() {
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-16 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-16 text-muted-foreground">
                   {search ? 'Keine Ergebnisse gefunden.' : 'Noch keine Kurse. Jetzt hinzufügen!'}
                 </TableCell>
               </TableRow>

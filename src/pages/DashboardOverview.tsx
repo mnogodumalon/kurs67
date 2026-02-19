@@ -1,280 +1,316 @@
 import { useEffect, useState } from 'react';
 import { LivingAppsService } from '@/services/livingAppsService';
-import type { Kurse, Anmeldungen, Teilnehmer, Dozenten, Raeume } from '@/types/app';
-import { BookOpen, Users, GraduationCap, DoorOpen, ClipboardList, TrendingUp, CheckCircle2, Clock, XCircle, Euro } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { format, parseISO, isAfter, isBefore, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import type { Kurse, Anmeldungen } from '@/types/app';
+import { GraduationCap, DoorOpen, Users, BookOpen, ClipboardList, TrendingUp, CheckCircle, Clock, Euro } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 interface Stats {
-  kurse: Kurse[];
-  anmeldungen: Anmeldungen[];
-  teilnehmer: Teilnehmer[];
-  dozenten: Dozenten[];
-  raeume: Raeume[];
+  dozenten: number;
+  raeume: number;
+  teilnehmer: number;
+  kurse: number;
+  anmeldungen: number;
+  bezahlt: number;
+  unbezahlt: number;
+  activeKurse: Kurse[];
+  upcomingKurse: Kurse[];
+  recentAnmeldungen: Anmeldungen[];
+  umsatz: number;
 }
-
-const PIE_COLORS = [
-  'oklch(0.52 0.22 264)',
-  'oklch(0.65 0.18 160)',
-  'oklch(0.80 0.16 72)',
-  'oklch(0.60 0.22 25)',
-];
 
 export default function DashboardOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      LivingAppsService.getKurse(),
-      LivingAppsService.getAnmeldungen(),
-      LivingAppsService.getTeilnehmer(),
-      LivingAppsService.getDozenten(),
-      LivingAppsService.getRaeume(),
-    ]).then(([kurse, anmeldungen, teilnehmer, dozenten, raeume]) => {
-      setStats({ kurse, anmeldungen, teilnehmer, dozenten, raeume });
-    }).catch(console.error).finally(() => setLoading(false));
+    async function loadStats() {
+      try {
+        const [dozentenData, raeumeData, teilnehmerData, kurseData, anmeldungenData] = await Promise.all([
+          LivingAppsService.getDozenten(),
+          LivingAppsService.getRaeume(),
+          LivingAppsService.getTeilnehmer(),
+          LivingAppsService.getKurse(),
+          LivingAppsService.getAnmeldungen(),
+        ]);
+
+        const today = new Date();
+        const in30Days = addDays(today, 30);
+
+        const activeKurse = kurseData.filter(k => {
+          if (!k.fields.startdatum) return false;
+          const start = parseISO(k.fields.startdatum);
+          const end = k.fields.enddatum ? parseISO(k.fields.enddatum) : null;
+          return isBefore(start, today) && (!end || isAfter(end, today));
+        });
+
+        const upcomingKurse = kurseData.filter(k => {
+          if (!k.fields.startdatum) return false;
+          const start = parseISO(k.fields.startdatum);
+          return isAfter(start, today) && isBefore(start, in30Days);
+        }).slice(0, 5);
+
+        const bezahlt = anmeldungenData.filter(a => a.fields.bezahlt).length;
+        const unbezahlt = anmeldungenData.filter(a => !a.fields.bezahlt).length;
+
+        const umsatz = anmeldungenData.reduce((sum, a) => {
+          if (!a.fields.bezahlt || !a.fields.kurs) return sum;
+          const kursId = a.fields.kurs.match(/([a-f0-9]{24})$/i)?.[1];
+          const kurs = kurseData.find(k => k.record_id === kursId);
+          return sum + (kurs?.fields.preis || 0);
+        }, 0);
+
+        const recentAnmeldungen = [...anmeldungenData]
+          .sort((a, b) => {
+            const da = a.fields.anmeldedatum || '';
+            const db = b.fields.anmeldedatum || '';
+            return db.localeCompare(da);
+          })
+          .slice(0, 5);
+
+        setStats({
+          dozenten: dozentenData.length,
+          raeume: raeumeData.length,
+          teilnehmer: teilnehmerData.length,
+          kurse: kurseData.length,
+          anmeldungen: anmeldungenData.length,
+          bezahlt,
+          unbezahlt,
+          activeKurse,
+          upcomingKurse,
+          recentAnmeldungen,
+          umsatz,
+        });
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStats();
   }, []);
 
-  const today = new Date();
-  const aktiveKurse = stats?.kurse.filter(k => k.fields.status === 'aktiv').length ?? 0;
-  const geplanteKurse = stats?.kurse.filter(k => k.fields.status === 'geplant').length ?? 0;
-  const bezahlteAnmeldungen = stats?.anmeldungen.filter(a => a.fields.bezahlt).length ?? 0;
-  const offeneAnmeldungen = stats?.anmeldungen.filter(a => !a.fields.bezahlt).length ?? 0;
+  const kpiCards = [
+    { label: 'Dozenten', value: stats?.dozenten ?? 0, icon: GraduationCap, gradient: 'gradient-card-indigo', description: 'Lehrende' },
+    { label: 'Räume', value: stats?.raeume ?? 0, icon: DoorOpen, gradient: 'gradient-card-teal', description: 'Verfügbar' },
+    { label: 'Teilnehmer', value: stats?.teilnehmer ?? 0, icon: Users, gradient: 'gradient-card-amber', description: 'Registriert' },
+    { label: 'Kurse', value: stats?.kurse ?? 0, icon: BookOpen, gradient: 'gradient-card-rose', description: 'Gesamt' },
+    { label: 'Anmeldungen', value: stats?.anmeldungen ?? 0, icon: ClipboardList, gradient: 'gradient-card-violet', description: 'Insgesamt' },
+  ];
 
-  const gesamtUmsatz = stats?.anmeldungen
-    .filter(a => a.fields.bezahlt && a.fields.kurs)
-    .reduce((sum, a) => {
-      const kursId = a.fields.kurs?.split('/').pop();
-      const kurs = stats.kurse.find(k => k.record_id === kursId);
-      return sum + (kurs?.fields.preis ?? 0);
-    }, 0) ?? 0;
-
-  const statusData = [
-    { name: 'Geplant', value: stats?.kurse.filter(k => k.fields.status === 'geplant').length ?? 0 },
-    { name: 'Aktiv', value: stats?.kurse.filter(k => k.fields.status === 'aktiv').length ?? 0 },
-    { name: 'Abgeschlossen', value: stats?.kurse.filter(k => k.fields.status === 'abgeschlossen').length ?? 0 },
-    { name: 'Abgesagt', value: stats?.kurse.filter(k => k.fields.status === 'abgesagt').length ?? 0 },
-  ].filter(d => d.value > 0);
-
-  const monthlyData = Array.from({ length: 6 }, (_, i) => {
-    const date = subMonths(today, 5 - i);
-    const start = startOfMonth(date);
-    const end = endOfMonth(date);
-    const count = stats?.anmeldungen.filter(a => {
-      if (!a.fields.anmeldedatum) return false;
-      const d = parseISO(a.fields.anmeldedatum);
-      return !isBefore(d, start) && !isAfter(d, end);
-    }).length ?? 0;
-    return { monat: format(date, 'MMM', { locale: de }), anmeldungen: count };
-  });
-
-  const upcomingKurse = stats?.kurse
-    .filter(k => k.fields.startdatum && isAfter(parseISO(k.fields.startdatum), today))
-    .sort((a, b) => {
-      const da = a.fields.startdatum ? parseISO(a.fields.startdatum).getTime() : 0;
-      const db = b.fields.startdatum ? parseISO(b.fields.startdatum).getTime() : 0;
-      return da - db;
-    })
-    .slice(0, 5) ?? [];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground text-sm font-medium animate-pulse">Lade Dashboard…</div>
-      </div>
-    );
-  }
+  const barData = stats ? [
+    { name: 'Bezahlt', value: stats.bezahlt, color: 'oklch(0.6 0.14 196)' },
+    { name: 'Ausstehend', value: stats.unbezahlt, color: 'oklch(0.72 0.18 60)' },
+  ] : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-8">
       {/* Hero Banner */}
-      <div className="hero-banner">
+      <div className="relative overflow-hidden rounded-2xl gradient-hero shadow-hero p-8 text-primary-foreground">
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'oklch(0.80 0.16 72)' }}>
-              Kursverwaltungssystem
-            </span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1" style={{ color: 'oklch(1 0 0)' }}>
-            Willkommen zurück
-          </h1>
-          <p className="text-sm" style={{ color: 'oklch(0.80 0.02 264)' }}>
-            {format(today, "EEEE, d. MMMM yyyy", { locale: de })} · Alle Daten im Überblick
+          <p className="text-sm font-medium tracking-widest uppercase opacity-70 mb-2">Kursverwaltungssystem</p>
+          <h1 className="text-4xl font-bold tracking-tight mb-1">Willkommen zurück</h1>
+          <p className="text-lg opacity-75 font-light">
+            {loading ? 'Lade Daten...' : `${stats?.kurse ?? 0} Kurse · ${stats?.teilnehmer ?? 0} Teilnehmer · ${stats?.anmeldungen ?? 0} Anmeldungen`}
           </p>
-          <div className="flex flex-wrap gap-5 mt-5">
-            <HeroStat icon={<BookOpen size={14} />} value={aktiveKurse} label="aktive Kurse" />
-            <HeroStat icon={<Euro size={14} />} value={gesamtUmsatz.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })} label="Umsatz (bezahlt)" />
-            <HeroStat icon={<Users size={14} />} value={stats?.teilnehmer.length ?? 0} label="Teilnehmer" />
-          </div>
         </div>
+        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full opacity-10" style={{ background: 'oklch(1 0 0)' }} />
+        <div className="absolute -right-4 -bottom-20 w-48 h-48 rounded-full opacity-5" style={{ background: 'oklch(1 0 0)' }} />
+        <div className="absolute right-32 top-4 w-24 h-24 rounded-full opacity-8" style={{ background: 'oklch(1 0 0)' }} />
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <KpiCard icon={<BookOpen size={18} />} orbClass="icon-orb-primary" label="Kurse gesamt" value={stats?.kurse.length ?? 0} sub={`${geplanteKurse} geplant`} />
-        <KpiCard icon={<GraduationCap size={18} />} orbClass="icon-orb-amber" label="Dozenten" value={stats?.dozenten.length ?? 0} sub="im System" />
-        <KpiCard icon={<Users size={18} />} orbClass="icon-orb-emerald" label="Teilnehmer" value={stats?.teilnehmer.length ?? 0} sub="registriert" />
-        <KpiCard icon={<DoorOpen size={18} />} orbClass="icon-orb-violet" label="Räume" value={stats?.raeume.length ?? 0} sub="verfügbar" />
-        <KpiCard icon={<ClipboardList size={18} />} orbClass="icon-orb-rose" label="Anmeldungen" value={stats?.anmeldungen.length ?? 0} sub={`${bezahlteAnmeldungen} bezahlt`} />
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="chart-card lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">Anmeldungen pro Monat</h3>
-              <p className="text-xs text-muted-foreground">Letzte 6 Monate</p>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {kpiCards.map(({ label, value, icon: Icon, gradient, description }) => (
+          <div
+            key={label}
+            className={`${gradient} rounded-xl p-5 text-primary-foreground shadow-card transition-smooth hover:scale-[1.02] hover:shadow-lg`}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="p-2 rounded-lg bg-white/20">
+                <Icon className="w-4 h-4" />
+              </div>
+              <TrendingUp className="w-3 h-3 opacity-60" />
             </div>
-            <div className="icon-orb icon-orb-primary" style={{ width: '2rem', height: '2rem', borderRadius: '0.625rem' }}>
-              <TrendingUp size={14} />
+            <div className="text-3xl font-bold tracking-tight mb-0.5">
+              {loading ? '—' : value}
             </div>
+            <div className="text-sm font-semibold opacity-90">{label}</div>
+            <div className="text-xs opacity-60 mt-0.5">{description}</div>
           </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={monthlyData} barSize={28} margin={{ left: -16 }}>
-              <XAxis dataKey="monat" tick={{ fontSize: 12, fill: 'oklch(0.52 0.02 264)' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: 'oklch(0.52 0.02 264)' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: 'oklch(1 0 0)', border: '1px solid oklch(0.90 0.008 264)', borderRadius: '0.5rem', fontSize: 12, boxShadow: 'var(--shadow-card)' }}
-                cursor={{ fill: 'oklch(0.52 0.22 264 / 0.06)' }}
-                formatter={(v: number) => [v, 'Anmeldungen']}
+        ))}
+      </div>
+
+      {/* Second row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Umsatz Hero Card */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-2 rounded-lg" style={{ background: 'oklch(0.95 0.025 264)' }}>
+                <Euro className="w-4 h-4" style={{ color: 'oklch(0.42 0.18 264)' }} />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Umsatz (bezahlt)</span>
+            </div>
+            <div className="text-5xl font-bold tracking-tight mt-4" style={{ color: 'oklch(0.42 0.18 264)' }}>
+              {loading ? '—' : `${stats?.umsatz.toLocaleString('de-DE')} €`}
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">Aus {stats?.bezahlt ?? 0} abgeschlossenen Zahlungen</p>
+          </div>
+          <div className="mt-6">
+            <div className="flex justify-between text-xs text-muted-foreground mb-2">
+              <span>Zahlungsstatus</span>
+              <span>{stats?.bezahlt ?? 0} / {stats?.anmeldungen ?? 0}</span>
+            </div>
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full transition-smooth"
+                style={{
+                  width: stats && stats.anmeldungen > 0 ? `${(stats.bezahlt / stats.anmeldungen) * 100}%` : '0%',
+                  background: 'var(--gradient-card-teal)',
+                }}
               />
-              <Bar dataKey="anmeldungen" fill="oklch(0.52 0.22 264)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+            </div>
+          </div>
         </div>
 
-        <div className="chart-card">
-          <div className="mb-3">
-            <h3 className="font-semibold text-foreground text-sm">Kursstatus</h3>
-            <p className="text-xs text-muted-foreground">Verteilung</p>
+        {/* Payment Chart */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm">Zahlungsstatus</h3>
           </div>
-          {statusData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={190}>
-              <PieChart>
-                <Pie data={statusData} cx="50%" cy="45%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
-                  {statusData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />
-                  ))}
-                </Pie>
-                <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11, color: 'oklch(0.42 0.02 264)' }}>{v}</span>} />
-                <Tooltip contentStyle={{ background: 'oklch(1 0 0)', border: '1px solid oklch(0.90 0.008 264)', borderRadius: '0.5rem', fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
+          {loading ? (
+            <div className="h-32 flex items-center justify-center text-muted-foreground text-sm">Lade...</div>
           ) : (
-            <div className="flex items-center justify-center h-44 text-xs text-muted-foreground">Noch keine Kurse angelegt</div>
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={barData} barSize={48}>
+                <XAxis dataKey="name" tick={{ fontSize: 12, fontFamily: 'IBM Plex Sans' }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ fontFamily: 'IBM Plex Sans', fontSize: 12, border: 'none', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                  cursor={{ fill: 'oklch(0.95 0.005 247)' }}
+                />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {barData.map((entry, index) => (
+                    <Cell key={index} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Upcoming Courses */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm">Nächste Kurse (30 Tage)</h3>
+          </div>
+          {loading ? (
+            <div className="text-muted-foreground text-sm">Lade...</div>
+          ) : stats?.upcomingKurse.length === 0 ? (
+            <div className="text-muted-foreground text-sm py-4 text-center">Keine bevorstehenden Kurse</div>
+          ) : (
+            <div className="space-y-3">
+              {stats?.upcomingKurse.map(kurs => (
+                <div key={kurs.record_id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                  <div>
+                    <div className="text-sm font-medium">{kurs.fields.titel}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {kurs.fields.startdatum
+                        ? format(parseISO(kurs.fields.startdatum), 'dd. MMM yyyy', { locale: de })
+                        : '—'}
+                    </div>
+                  </div>
+                  {kurs.fields.preis != null && (
+                    <span className="text-xs font-semibold px-2 py-1 rounded-md" style={{ background: 'oklch(0.93 0.025 264)', color: 'oklch(0.42 0.18 264)' }}>
+                      {kurs.fields.preis} €
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Upcoming Courses */}
-      <div className="chart-card">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold text-foreground text-sm">Nächste Kurse</h3>
-            <p className="text-xs text-muted-foreground">Demnächst startende Kurse</p>
+      {/* Active courses + recent registrations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Active Courses */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-semibold text-sm">Laufende Kurse</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ background: 'oklch(0.93 0.025 264)', color: 'oklch(0.42 0.18 264)' }}>
+              {stats?.activeKurse.length ?? 0} aktiv
+            </span>
           </div>
-          <div className="icon-orb icon-orb-amber" style={{ width: '2rem', height: '2rem', borderRadius: '0.625rem' }}>
-            <Clock size={14} />
-          </div>
-        </div>
-        {upcomingKurse.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">Keine bevorstehenden Kurse</p>
-        ) : (
-          <div className="space-y-1">
-            {upcomingKurse.map(kurs => {
-              const anmeldungenCount = stats?.anmeldungen.filter(a => a.fields.kurs?.endsWith(kurs.record_id)).length ?? 0;
-              const statusClass = `badge-${kurs.fields.status ?? 'geplant'}`;
-              return (
-                <div key={kurs.record_id} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="icon-orb icon-orb-primary" style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', flexShrink: 0 }}>
-                      <BookOpen size={13} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{kurs.fields.titel}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {kurs.fields.startdatum ? format(parseISO(kurs.fields.startdatum), 'dd.MM.yyyy') : '–'}
-                        {kurs.fields.preis ? ` · ${kurs.fields.preis} €` : ''}
-                      </p>
+          {loading ? (
+            <div className="text-muted-foreground text-sm">Lade...</div>
+          ) : stats?.activeKurse.length === 0 ? (
+            <div className="text-muted-foreground text-sm py-4 text-center">Keine laufenden Kurse</div>
+          ) : (
+            <div className="space-y-2">
+              {stats?.activeKurse.slice(0, 6).map(kurs => (
+                <div key={kurs.record_id} className="flex items-center gap-3 p-3 rounded-lg transition-smooth hover:bg-muted/50">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'oklch(0.6 0.14 196)' }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{kurs.fields.titel}</div>
+                    <div className="text-xs text-muted-foreground">
+                      bis {kurs.fields.enddatum ? format(parseISO(kurs.fields.enddatum), 'dd.MM.yyyy') : '—'}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-xs text-muted-foreground hidden sm:block">{anmeldungenCount} Anm.</span>
-                    <span className={`${statusClass} text-xs font-medium px-2.5 py-0.5 rounded-full`}>
-                      {kurs.fields.status ?? 'geplant'}
-                    </span>
-                  </div>
+                  {kurs.fields.max_teilnehmer && (
+                    <span className="text-xs text-muted-foreground flex-shrink-0">max. {kurs.fields.max_teilnehmer}</span>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Payment Status Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="chart-card flex items-center gap-4">
-          <div className="icon-orb icon-orb-emerald">
-            <CheckCircle2 size={18} />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-foreground">{bezahlteAnmeldungen}</div>
-            <div className="text-sm text-muted-foreground">Bezahlte Anmeldungen</div>
-          </div>
-          <div className="ml-auto text-right">
-            <div className="text-sm font-bold" style={{ color: 'oklch(0.45 0.18 155)' }}>
-              {stats?.anmeldungen.length ? Math.round((bezahlteAnmeldungen / stats.anmeldungen.length) * 100) : 0}%
+              ))}
             </div>
-            <div className="text-xs text-muted-foreground">Quote</div>
-          </div>
+          )}
         </div>
-        <div className="chart-card flex items-center gap-4">
-          <div className="icon-orb icon-orb-rose">
-            <XCircle size={18} />
+
+        {/* Recent Registrations */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardList className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm">Letzte Anmeldungen</h3>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-foreground">{offeneAnmeldungen}</div>
-            <div className="text-sm text-muted-foreground">Offene Zahlungen</div>
-          </div>
-          <div className="ml-auto text-right">
-            <div className="text-sm font-bold" style={{ color: 'oklch(0.50 0.22 22)' }}>
-              {stats?.anmeldungen.length ? Math.round((offeneAnmeldungen / stats.anmeldungen.length) * 100) : 0}%
+          {loading ? (
+            <div className="text-muted-foreground text-sm">Lade...</div>
+          ) : stats?.recentAnmeldungen.length === 0 ? (
+            <div className="text-muted-foreground text-sm py-4 text-center">Keine Anmeldungen vorhanden</div>
+          ) : (
+            <div className="space-y-2">
+              {stats?.recentAnmeldungen.map(a => (
+                <div key={a.record_id} className="flex items-center gap-3 p-3 rounded-lg transition-smooth hover:bg-muted/50">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary-foreground" style={{ background: 'var(--gradient-card-indigo)' }}>
+                    {a.record_id.slice(-2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-muted-foreground">
+                      {a.fields.anmeldedatum
+                        ? format(parseISO(a.fields.anmeldedatum), 'dd. MMM yyyy', { locale: de })
+                        : '—'}
+                    </div>
+                  </div>
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                    style={a.fields.bezahlt
+                      ? { background: 'oklch(0.93 0.05 148)', color: 'oklch(0.38 0.12 148)' }
+                      : { background: 'oklch(0.96 0.04 60)', color: 'oklch(0.52 0.14 60)' }
+                    }
+                  >
+                    {a.fields.bezahlt ? 'Bezahlt' : 'Offen'}
+                  </span>
+                </div>
+              ))}
             </div>
-            <div className="text-xs text-muted-foreground">Quote</div>
-          </div>
+          )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function HeroStat({ icon, value, label }: { icon: React.ReactNode; value: number | string; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="icon-orb icon-orb-white" style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem' }}>
-        {icon}
-      </div>
-      <div>
-        <div className="text-base font-bold leading-tight" style={{ color: 'oklch(1 0 0)' }}>{value}</div>
-        <div className="text-xs leading-tight" style={{ color: 'oklch(0.72 0.02 264)' }}>{label}</div>
-      </div>
-    </div>
-  );
-}
-
-function KpiCard({ icon, orbClass, label, value, sub }: {
-  icon: React.ReactNode; orbClass: string; label: string; value: number | string; sub?: string;
-}) {
-  return (
-    <div className="stat-card-default rounded-xl p-4 flex flex-col gap-3">
-      <div className={`icon-orb ${orbClass}`}>{icon}</div>
-      <div>
-        <div className="text-2xl font-bold text-foreground leading-none">{value}</div>
-        <div className="text-xs font-medium text-foreground/70 mt-1">{label}</div>
-        {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
       </div>
     </div>
   );

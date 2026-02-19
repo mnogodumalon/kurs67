@@ -1,6 +1,6 @@
 // AUTOMATICALLY GENERATED SERVICE
 import { APP_IDS } from '@/types/app';
-import type { Dozenten, Teilnehmer, Raeume, Kurse, Anmeldungen } from '@/types/app';
+import type { Dozenten, Raeume, Teilnehmer, Kurse, Anmeldungen } from '@/types/app';
 
 // Base Configuration
 const API_BASE_URL = 'https://my.living-apps.de/rest';
@@ -52,27 +52,6 @@ export class LivingAppsService {
     return callApi('DELETE', `/apps/${APP_IDS.DOZENTEN}/records/${id}`);
   }
 
-  // --- TEILNEHMER ---
-  static async getTeilnehmer(): Promise<Teilnehmer[]> {
-    const data = await callApi('GET', `/apps/${APP_IDS.TEILNEHMER}/records`);
-    return Object.entries(data).map(([id, rec]: [string, any]) => ({
-      record_id: id, ...rec
-    }));
-  }
-  static async getTeilnehmerEntry(id: string): Promise<Teilnehmer | undefined> {
-    const data = await callApi('GET', `/apps/${APP_IDS.TEILNEHMER}/records/${id}`);
-    return { record_id: data.id, ...data };
-  }
-  static async createTeilnehmerEntry(fields: Teilnehmer['fields']) {
-    return callApi('POST', `/apps/${APP_IDS.TEILNEHMER}/records`, { fields });
-  }
-  static async updateTeilnehmerEntry(id: string, fields: Partial<Teilnehmer['fields']>) {
-    return callApi('PATCH', `/apps/${APP_IDS.TEILNEHMER}/records/${id}`, { fields });
-  }
-  static async deleteTeilnehmerEntry(id: string) {
-    return callApi('DELETE', `/apps/${APP_IDS.TEILNEHMER}/records/${id}`);
-  }
-
   // --- RAEUME ---
   static async getRaeume(): Promise<Raeume[]> {
     const data = await callApi('GET', `/apps/${APP_IDS.RAEUME}/records`);
@@ -92,6 +71,27 @@ export class LivingAppsService {
   }
   static async deleteRaeumeEntry(id: string) {
     return callApi('DELETE', `/apps/${APP_IDS.RAEUME}/records/${id}`);
+  }
+
+  // --- TEILNEHMER ---
+  static async getTeilnehmer(): Promise<Teilnehmer[]> {
+    const data = await callApi('GET', `/apps/${APP_IDS.TEILNEHMER}/records`);
+    return Object.entries(data).map(([id, rec]: [string, any]) => ({
+      record_id: id, ...rec
+    }));
+  }
+  static async getTeilnehmerEntry(id: string): Promise<Teilnehmer | undefined> {
+    const data = await callApi('GET', `/apps/${APP_IDS.TEILNEHMER}/records/${id}`);
+    return { record_id: data.id, ...data };
+  }
+  static async createTeilnehmerEntry(fields: Teilnehmer['fields']) {
+    return callApi('POST', `/apps/${APP_IDS.TEILNEHMER}/records`, { fields });
+  }
+  static async updateTeilnehmerEntry(id: string, fields: Partial<Teilnehmer['fields']>) {
+    return callApi('PATCH', `/apps/${APP_IDS.TEILNEHMER}/records/${id}`, { fields });
+  }
+  static async deleteTeilnehmerEntry(id: string) {
+    return callApi('DELETE', `/apps/${APP_IDS.TEILNEHMER}/records/${id}`);
   }
 
   // --- KURSE ---

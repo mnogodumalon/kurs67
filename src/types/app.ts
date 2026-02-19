@@ -12,6 +12,17 @@ export interface Dozenten {
   };
 }
 
+export interface Raeume {
+  record_id: string;
+  createdat: string;
+  updatedat: string | null;
+  fields: {
+    raumname?: string;
+    gebaeude?: string;
+    kapazitaet?: number;
+  };
+}
+
 export interface Teilnehmer {
   record_id: string;
   createdat: string;
@@ -21,17 +32,6 @@ export interface Teilnehmer {
     email?: string;
     telefon?: string;
     geburtsdatum?: string; // Format: YYYY-MM-DD oder ISO String
-  };
-}
-
-export interface Raeume {
-  record_id: string;
-  createdat: string;
-  updatedat: string | null;
-  fields: {
-    raumname?: string;
-    gebaeude?: string;
-    kapazitaet?: number;
   };
 }
 
@@ -48,7 +48,6 @@ export interface Kurse {
     preis?: number;
     dozent?: string; // applookup -> URL zu 'Dozenten' Record
     raum?: string; // applookup -> URL zu 'Raeume' Record
-    status?: 'geplant' | 'aktiv' | 'abgeschlossen' | 'abgesagt';
   };
 }
 
@@ -65,16 +64,16 @@ export interface Anmeldungen {
 }
 
 export const APP_IDS = {
-  DOZENTEN: '6996f26ce11c79613beb4794',
-  TEILNEHMER: '6996f26d3bf5ebb9010684f0',
-  RAEUME: '6996f26d877637ee2b5b71af',
-  KURSE: '6996f26dd945f0811216daa8',
-  ANMELDUNGEN: '6996f26e5dae37b91e4f877c',
+  DOZENTEN: '6996f4f24f9ee0c08fa67b5f',
+  RAEUME: '6996f4f29d5dc5124ed65432',
+  TEILNEHMER: '6996f4f2e9de9012fa96b0e6',
+  KURSE: '6996f4f3466f18ebe99ec905',
+  ANMELDUNGEN: '6996f4f3afbdaf0969403241',
 } as const;
 
 // Helper Types for creating new records
 export type CreateDozenten = Dozenten['fields'];
-export type CreateTeilnehmer = Teilnehmer['fields'];
 export type CreateRaeume = Raeume['fields'];
+export type CreateTeilnehmer = Teilnehmer['fields'];
 export type CreateKurse = Kurse['fields'];
 export type CreateAnmeldungen = Anmeldungen['fields'];

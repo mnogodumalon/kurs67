@@ -3,7 +3,7 @@
   "appgroup_name": "Auto-Generated",
   "apps": {
     "dozenten": {
-      "app_id": "6996f26ce11c79613beb4794",
+      "app_id": "6996f4f24f9ee0c08fa67b5f",
       "name": "Dozenten",
       "controls": {
         "name": {
@@ -68,8 +68,60 @@
         }
       }
     },
+    "raeume": {
+      "app_id": "6996f4f29d5dc5124ed65432",
+      "name": "R\u00e4ume",
+      "controls": {
+        "raumname": {
+          "identifier": "raumname",
+          "label": "Raumname",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": true,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": true,
+          "in_expert_search": true
+        },
+        "gebaeude": {
+          "identifier": "gebaeude",
+          "label": "Geb\u00e4ude",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": false,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": true,
+          "in_expert_search": true
+        },
+        "kapazitaet": {
+          "identifier": "kapazitaet",
+          "label": "Kapazit\u00e4t",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": false,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": true,
+          "in_expert_search": true,
+          "precision": null
+        }
+      }
+    },
     "teilnehmer": {
-      "app_id": "6996f26d3bf5ebb9010684f0",
+      "app_id": "6996f4f2e9de9012fa96b0e6",
       "name": "Teilnehmer",
       "controls": {
         "name": {
@@ -134,60 +186,8 @@
         }
       }
     },
-    "raeume": {
-      "app_id": "6996f26d877637ee2b5b71af",
-      "name": "R\u00e4ume",
-      "controls": {
-        "raumname": {
-          "identifier": "raumname",
-          "label": "Raumname",
-          "type": "string",
-          "subtype": "text",
-          "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
-          "required": true,
-          "in_list": true,
-          "in_mobile_list": true,
-          "in_text": false,
-          "in_structured_search": false,
-          "in_fulltext_search": true,
-          "in_expert_search": true
-        },
-        "gebaeude": {
-          "identifier": "gebaeude",
-          "label": "Geb\u00e4ude",
-          "type": "string",
-          "subtype": "text",
-          "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
-          "required": false,
-          "in_list": true,
-          "in_mobile_list": true,
-          "in_text": false,
-          "in_structured_search": false,
-          "in_fulltext_search": true,
-          "in_expert_search": true
-        },
-        "kapazitaet": {
-          "identifier": "kapazitaet",
-          "label": "Kapazit\u00e4t",
-          "type": "number",
-          "subtype": null,
-          "fulltype": "number",
-          "description": "A decimal number value (or `null`/`None`).",
-          "required": false,
-          "in_list": true,
-          "in_mobile_list": true,
-          "in_text": false,
-          "in_structured_search": false,
-          "in_fulltext_search": true,
-          "in_expert_search": true,
-          "precision": null
-        }
-      }
-    },
     "kurse": {
-      "app_id": "6996f26dd945f0811216daa8",
+      "app_id": "6996f4f3466f18ebe99ec905",
       "name": "Kurse",
       "controls": {
         "titel": {
@@ -288,7 +288,7 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to a LivingApp record from the target lookup app 'Dozenten' with the id `6996f26ce11c79613beb4794` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/6996f26ce11c79613beb4794/<record-id>` or `null`/`None`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Dozenten' with the id `6996f4f24f9ee0c08fa67b5f` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/6996f4f24f9ee0c08fa67b5f/<record-id>` or `null`/`None`.",
           "required": false,
           "in_list": true,
           "in_mobile_list": true,
@@ -296,7 +296,7 @@
           "in_structured_search": false,
           "in_fulltext_search": true,
           "in_expert_search": true,
-          "lookup_app": "https://my.living-apps.de/rest/apps/6996f26ce11c79613beb4794"
+          "lookup_app": "https://my.living-apps.de/rest/apps/6996f4f24f9ee0c08fa67b5f"
         },
         "raum": {
           "identifier": "raum",
@@ -304,7 +304,7 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to a LivingApp record from the target lookup app 'R\u00e4ume' with the id `6996f26d877637ee2b5b71af` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/6996f26d877637ee2b5b71af/<record-id>` or `null`/`None`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'R\u00e4ume' with the id `6996f4f29d5dc5124ed65432` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/6996f4f29d5dc5124ed65432/<record-id>` or `null`/`None`.",
           "required": false,
           "in_list": true,
           "in_mobile_list": true,
@@ -312,33 +312,12 @@
           "in_structured_search": false,
           "in_fulltext_search": true,
           "in_expert_search": true,
-          "lookup_app": "https://my.living-apps.de/rest/apps/6996f26d877637ee2b5b71af"
-        },
-        "status": {
-          "identifier": "status",
-          "label": "Status",
-          "type": "lookup",
-          "subtype": "select",
-          "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
-          "required": false,
-          "in_list": true,
-          "in_mobile_list": true,
-          "in_text": false,
-          "in_structured_search": false,
-          "in_fulltext_search": true,
-          "in_expert_search": true,
-          "lookup_data": {
-            "geplant": "Geplant",
-            "aktiv": "Aktiv",
-            "abgeschlossen": "Abgeschlossen",
-            "abgesagt": "Abgesagt"
-          }
+          "lookup_app": "https://my.living-apps.de/rest/apps/6996f4f29d5dc5124ed65432"
         }
       }
     },
     "anmeldungen": {
-      "app_id": "6996f26e5dae37b91e4f877c",
+      "app_id": "6996f4f3afbdaf0969403241",
       "name": "Anmeldungen",
       "controls": {
         "teilnehmer": {
@@ -347,7 +326,7 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to a LivingApp record from the target lookup app 'Teilnehmer' with the id `6996f26d3bf5ebb9010684f0` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/6996f26d3bf5ebb9010684f0/<record-id>` or `null`/`None`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Teilnehmer' with the id `6996f4f2e9de9012fa96b0e6` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/6996f4f2e9de9012fa96b0e6/<record-id>` or `null`/`None`.",
           "required": true,
           "in_list": true,
           "in_mobile_list": true,
@@ -355,7 +334,7 @@
           "in_structured_search": false,
           "in_fulltext_search": true,
           "in_expert_search": true,
-          "lookup_app": "https://my.living-apps.de/rest/apps/6996f26d3bf5ebb9010684f0"
+          "lookup_app": "https://my.living-apps.de/rest/apps/6996f4f2e9de9012fa96b0e6"
         },
         "kurs": {
           "identifier": "kurs",
@@ -363,7 +342,7 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to a LivingApp record from the target lookup app 'Kurse' with the id `6996f26dd945f0811216daa8` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/6996f26dd945f0811216daa8/<record-id>` or `null`/`None`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Kurse' with the id `6996f4f3466f18ebe99ec905` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/6996f4f3466f18ebe99ec905/<record-id>` or `null`/`None`.",
           "required": true,
           "in_list": true,
           "in_mobile_list": true,
@@ -371,7 +350,7 @@
           "in_structured_search": false,
           "in_fulltext_search": true,
           "in_expert_search": true,
-          "lookup_app": "https://my.living-apps.de/rest/apps/6996f26dd945f0811216daa8"
+          "lookup_app": "https://my.living-apps.de/rest/apps/6996f4f3466f18ebe99ec905"
         },
         "anmeldedatum": {
           "identifier": "anmeldedatum",
@@ -409,8 +388,8 @@
   "metadata": {
     "apps_list": [
       "Dozenten",
-      "Teilnehmer",
       "R\u00e4ume",
+      "Teilnehmer",
       "Kurse",
       "Anmeldungen"
     ]

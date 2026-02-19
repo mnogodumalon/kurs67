@@ -9,8 +9,8 @@ const APP_SUBTITLE = 'Kursverwaltung';
 const navigation = [
   { name: 'Übersicht', href: '/', icon: LayoutDashboard },
   { name: 'Dozenten', href: '/dozenten', icon: GraduationCap },
-  { name: 'Teilnehmer', href: '/teilnehmer', icon: Users },
   { name: 'Räume', href: '/raeume', icon: DoorOpen },
+  { name: 'Teilnehmer', href: '/teilnehmer', icon: Users },
   { name: 'Kurse', href: '/kurse', icon: BookOpen },
   { name: 'Anmeldungen', href: '/anmeldungen', icon: ClipboardList },
 ];
